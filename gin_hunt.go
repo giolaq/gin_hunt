@@ -47,8 +47,6 @@ const (
 )
 
 func main() {
-	print()
-
 	r := gin.Default()
 
 	r.GET("/hunt", func(c *gin.Context) {
