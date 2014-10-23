@@ -7,13 +7,14 @@ import (
 	"io/ioutil"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+	"log"
 	"os/exec"
 )
 
 const (
 	HUNT_PATH     = "huntdata/"
 	JSON_FILENAME = "sampleHunt.json"
-	ZIP_FILENAME  = "hunt.zip"
+	//ZIP_FILENAME  = "hunt.zip"
 
 	MONGO_URL        = "localhost"
 	MONGO_DB         = "HUNT_DB"
@@ -131,8 +132,9 @@ func main() {
 		}
 	})
 
-	r.HEAD("createZip/:hunt_id", func(c *gin.Context) {
+	r.HEAD("createZip/:hunt_id/:filename", func(c *gin.Context) {
 		id := c.Params.ByName("hunt_id")
+		filename := c.Params.ByName("filename")
 
 		var hunt model.Hunt
 
@@ -151,15 +153,13 @@ func main() {
 			panic(err)
 		}
 
-		err = exec.Command("zip", "-r", ZIP_FILENAME).Run()
+		err = exec.Command("zip", "-r", "zip/"+filename, HUNT_PATH).Run()
 		if err != nil {
 			panic(err)
 		}
 	})
 
-	r.GET(ZIP_FILENAME, func(c *gin.Context) {
-		c.File(ZIP_FILENAME)
-	})
+	r.Static("zip", "zip/")
 
 	r.Run(":8080")
 }
