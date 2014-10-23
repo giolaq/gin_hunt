@@ -23,7 +23,9 @@ _testmain.go
 *.test
 *.prof
 
+
 gin_hunt
 zip/*
 huntdata/*
+*.json
 
