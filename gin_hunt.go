@@ -22,8 +22,9 @@ type Question struct {
 }
 
 type Clue struct {
+	Id string `bson:"id" json:"id"`
+
 	Type         string   `bson:"type" json:"type"`
-	Id           string   `bson:"id" json:"id"`
 	ShuffleGroup int      `bson:"shufflegroup" json:"shufflegroup"`
 	DisplayName  string   `bson:"displayName" json:"displayName"`
 	DisplayText  string   `bson:"displayText" json:"displayText"`
@@ -33,9 +34,10 @@ type Clue struct {
 }
 
 type Hunt struct {
+	Id string `bson:"id" json:"id"`
+
 	Type        string `bson:"type" json:"type"`
 	DisplayName string `bson:"displayName" json:"displayName"`
-	Id          string `bson:"id" json:"id"`
 	Clues       []Clue `bson:"clues" json:"clues"`
 }
 
@@ -66,85 +68,109 @@ func DB() gin.HandlerFunc {
 }
 
 func main() {
-	r := gin.Default()
+	engine := gin.Default()
 
-	r.Use(DB())
+	engine.Use(DB())
 
-	r.POST("/hunt", func(c *gin.Context) {
+	engine.POST("/hunt", func(c *gin.Context) {
 		var hunt Hunt
-		ok := c.Bind(&hunt)
 
+		ok := c.Bind(&hunt)
 		if ok == true {
+			id := hunt.Id
+
 			db := c.MustGet(MONGO_DB).(*mgo.Database)
-			db.C(MONGO_COLLECTION).Insert(hunt)
+			info, err := db.C(MONGO_COLLECTION).Upsert(bson.M{"id": id}, hunt)
+			if err != nil {
+				c.Fail(400, err)
+			} else {
+				c.JSON(200, info)
+			}
 		}
 	})
 
-	r.GET("/hunt", func(c *gin.Context) {
+	engine.GET("/hunt", func(c *gin.Context) {
 		var hunt []Hunt
 
 		db := c.MustGet(MONGO_DB).(*mgo.Database)
-		db.C(MONGO_COLLECTION).Find(nil).All(&hunt)
-
-		c.JSON(200, hunt)
-	})
-
-	r.GET("/hunt/:hunt_id", func(c *gin.Context) {
-		id := c.Params.ByName("hunt_id")
-
-		var hunt Hunt
-
-		db := c.MustGet(MONGO_DB).(*mgo.Database)
-		db.C(MONGO_COLLECTION).Find(bson.M{"id": id}).One(&hunt)
-
-		c.JSON(200, hunt)
-	})
-
-	r.PUT("/hunt/:hunt_id", func(c *gin.Context) {
-		id := c.Params.ByName("hunt_id")
-
-		var hunt Hunt
-		ok := c.Bind(&hunt)
-
-		if ok == true {
-			db := c.MustGet(MONGO_DB).(*mgo.Database)
-			db.C(MONGO_COLLECTION).Update(bson.M{"id": id}, hunt)
+		err := db.C(MONGO_COLLECTION).Find(nil).All(&hunt)
+		if err != nil {
+			c.Fail(400, err)
+		} else {
+			c.JSON(200, hunt)
 		}
 	})
 
-	r.DELETE("/hunt", func(c *gin.Context) {
+	engine.GET("/hunt/:hunt_id", func(c *gin.Context) {
+		id := c.Params.ByName("hunt_id")
+
+		var hunt Hunt
+
 		db := c.MustGet(MONGO_DB).(*mgo.Database)
-		db.C(MONGO_COLLECTION).RemoveAll(nil)
+		err := db.C(MONGO_COLLECTION).Find(bson.M{"id": id}).One(&hunt)
+		if err != nil {
+			c.Fail(400, err)
+		} else {
+			c.JSON(200, hunt)
+		}
 	})
 
-	r.DELETE("/hunt/:hunt_id", func(c *gin.Context) {
+	engine.DELETE("/hunt", func(c *gin.Context) {
+		db := c.MustGet(MONGO_DB).(*mgo.Database)
+		info, err := db.C(MONGO_COLLECTION).RemoveAll(nil)
+		if err != nil {
+			c.Fail(400, err)
+		} else {
+			c.JSON(200, info)
+		}
+	})
+
+	engine.DELETE("/hunt/:hunt_id", func(c *gin.Context) {
 		id := c.Params.ByName("hunt_id")
 
 		db := c.MustGet(MONGO_DB).(*mgo.Database)
-		db.C(MONGO_COLLECTION).Remove(bson.M{"id": id})
+		err := db.C(MONGO_COLLECTION).Remove(bson.M{"id": id})
+		if err != nil {
+			c.Fail(400, err)
+		}
 	})
 
-	r.PUT("/clue/:hunt_id", func(c *gin.Context) {
-		hid := c.Params.ByName("hunt_id")
+	engine.PUT("/clue/:hunt_id", func(c *gin.Context) {
+		id := c.Params.ByName("hunt_id")
 
 		var hunt Hunt
+
 		db := c.MustGet(MONGO_DB).(*mgo.Database)
-		db.C(MONGO_COLLECTION).Find(bson.M{"id": hid}).One(&hunt)
+		err := db.C(MONGO_COLLECTION).Find(bson.M{"id": id}).One(&hunt)
+		if err != nil {
+			c.Fail(400, err)
+			return
+		}
 
 		var clue Clue
-		c.Bind(&hunt)
+		ok := c.Bind(&hunt)
 
-		hunt.Clues = append(hunt.Clues, clue)
+		if ok {
+			hunt.Clues = append(hunt.Clues, clue)
 
-		db.C(MONGO_COLLECTION).Update(nil, hunt)
+			err := db.C(MONGO_COLLECTION).Update(nil, hunt)
+			if err != nil {
+				c.Fail(400, err)
+			}
+		}
 	})
 
-	r.HEAD("createZip/:hunt_id", func(c *gin.Context) {
-		hid := c.Params.ByName("hunt_id")
+	engine.HEAD("createZip/:hunt_id", func(c *gin.Context) {
+		id := c.Params.ByName("hunt_id")
 
 		var hunt Hunt
+
 		db := c.MustGet(MONGO_DB).(*mgo.Database)
-		db.C(MONGO_COLLECTION).Find(bson.M{"id": hid}).One(&hunt)
+		err := db.C(MONGO_COLLECTION).Find(bson.M{"id": id}).One(&hunt)
+		if err != nil {
+			c.Fail(400, err)
+			return
+		}
 
 		buffer, err := json.MarshalIndent(hunt, "", "\t")
 		if err != nil {
@@ -165,11 +191,11 @@ func main() {
 		}
 	})
 
-	r.GET(ZIP_FILENAME, func(c *gin.Context) {
+	engine.GET(ZIP_FILENAME, func(c *gin.Context) {
 		c.File(ZIP_FILENAME)
 	})
 
-	r.Static("data", HUNT_PATH)
+	//engine.Static("data", HUNT_PATH)
 
-	r.Run(":8080")
+	engine.Run(":8080")
 }
