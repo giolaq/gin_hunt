@@ -130,7 +130,7 @@ func main() {
 		var clue model.Clue
 
 		if c.Bind(&clue) {
-			hunt.Clues = append(hunt.Clues, clue)
+			hunt.Clues = append(hunt.Clues, &clue)
 
 			info, err := mDB.C(MONGO_COLLECTION).UpdateAll(bson.M{"id": id}, hunt)
 			if err != nil {
