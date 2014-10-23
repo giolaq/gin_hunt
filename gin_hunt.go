@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"github.com/gin-gonic/gin"
 	"github.com/nichel/gin_hunt/models"
 	"io/ioutil"
@@ -13,9 +14,8 @@ import (
 const (
 	HUNT_PATH     = "huntdata/"
 	JSON_FILENAME = "sampleHunt.json"
-	//ZIP_FILENAME  = "hunt.zip"
 
-	MONGO_URL        = "localhost"
+	DEF_MONGO_URL    = "localhost"
 	MONGO_DB         = "HUNT_DB"
 	MONGO_COLLECTION = "HUNT_COLL"
 )
@@ -24,8 +24,8 @@ var (
 	mDB *mgo.Database
 )
 
-func MongoDB() gin.HandlerFunc {
-	session, err := mgo.Dial(MONGO_URL)
+func MongoDB(mongo_url string) gin.HandlerFunc {
+	session, err := mgo.Dial(mongo_url)
 	if err != nil {
 		panic(err)
 	}
@@ -40,13 +40,23 @@ func MongoDB() gin.HandlerFunc {
 }
 
 func main() {
-	gin.SetMode(gin.DebugMode)
+	debug := flag.Bool("debug", false, "start in debug mode")
+	port := flag.String("port", "8080", "port number")
+	mongo_url := flag.String("mongod", DEF_MONGO_URL, "mongodb url")
+
+	flag.Parse()
+
+	if *debug {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	r := gin.New()
 
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
-	r.Use(MongoDB())
+	r.Use(MongoDB(*mongo_url))
 
 	r.POST("/hunt", func(c *gin.Context) {
 		var hunt model.Hunt
@@ -160,5 +170,5 @@ func main() {
 
 	r.Static("zip", "zip/")
 
-	r.Run(":8080")
+	r.Run(":" + (*port))
 }
