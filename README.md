@@ -4,7 +4,7 @@ gin_hunt
   
 **gin_hunt** is a back-end for the [Google IOHunt](https://github.com/joaobiriba/gdgdevfesthunt) by GDG-Roma
 
-It is written in Golang using [Gin web framework](http://example.com) and it use Mongo DB.
+It is written in Golang using [Gin web framework](https://github.com/gin-gonic/gin) and it use Mongo DB.
 
 How To
 --
