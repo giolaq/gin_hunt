@@ -8,5 +8,5 @@ How To
 --
 ```
 # go get github.com/nichel/gin_hunt
-# go run gin_hunt.go [-debug] [-port=8080] [-mongod=localhost]
+# go run gin_hunt.go [-d] [-port=8080] [-mongod=localhost]
 ```
