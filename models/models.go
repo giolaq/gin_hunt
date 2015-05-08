@@ -27,5 +27,6 @@ type Hunt struct {
 	Id          string  `bson:"id" json:"id"`
 	Type        string  `bson:"type" json:"type"`
 	DisplayName string  `bson:"displayName" json:"displayName"`
+	ImageUrl    string  `bson:"imageUrl" json:"imageUrl"`
 	Clues       []*Clue `bson:"clues,omitempty" json:"clues,omitempty"`
 }
