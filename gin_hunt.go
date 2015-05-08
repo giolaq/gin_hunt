@@ -11,6 +11,9 @@ import (
 	"github.com/nichel/gin_hunt/models"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+
+	"github.com/tommy351/gin-cors"
+
 )
 
 const (
@@ -60,6 +63,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Use(cors.Middleware(cors.Options{}))
 	r.Use(MongoDB(*mongo_url))
 
 	r.GET("/hunt", func(c *gin.Context) {
